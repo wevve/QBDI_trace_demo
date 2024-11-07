@@ -1,0 +1,33 @@
+{
+  "buildFiles": [
+    "/Users/ligoudan/Desktop/XposedNHook/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/ligoudan/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/ligoudan/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "imgui::@6890427a1f51a3e7e1df": {
+      "artifactName": "imgui",
+      "abi": "arm64-v8a",
+      "output": "/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a/libimgui.a",
+      "runtimeFiles": []
+    },
+    "nhook::@6890427a1f51a3e7e1df": {
+      "artifactName": "nhook",
+      "abi": "arm64-v8a",
+      "output": "/Users/ligoudan/Desktop/XposedNHook/app/build/intermediates/cxx/Debug/4lq6t6k1/obj/arm64-v8a/libnhook.so",
+      "runtimeFiles": []
+    }
+  }
+}

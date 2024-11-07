@@ -1,0 +1,4 @@
+/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a/CMakeFiles/nhook.dir
+/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a/CMakeFiles/imgui.dir
+/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/ligoudan/Desktop/XposedNHook/app/.cxx/Debug/4lq6t6k1/arm64-v8a/CMakeFiles/rebuild_cache.dir

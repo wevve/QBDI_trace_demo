@@ -1,0 +1,8 @@
+[versions]
+agp = "7.4.2"
+
+[libraries]
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+
