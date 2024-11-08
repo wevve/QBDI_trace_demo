@@ -126,10 +126,9 @@ Java_cn_mrack_xposed_nhook_NHook_sign1(JNIEnv *env, jclass thiz, jstring sign) {
     char *res_chars = new char[strlen(sign_)];
     strcpy(res_chars, sign_);
     auto *key = (u_char *) "\x01\x02\x03\x04\x05";
-    for (int i = 0; i < 10; ++i) {
-        rc4(key, sizeof(key), res_chars, strlen(sign_));
-    }
-
+//    for (int i = 0; i < 10; ++i) {
+//        rc4(key, sizeof(key), res_chars, strlen(sign_));
+//    }
     rc4(key, sizeof(key), res_chars, strlen(sign_));
     LOGE("res_chars : %s",res_chars);
 

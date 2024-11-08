@@ -75,6 +75,24 @@ std::string getSymbolFromCache(uint64_t address) {
     return "";
 }
 
+// 判断内存内容是否为有效的 ASCII 可打印字符串，且不为全空格
+bool isAsciiPrintableString(const uint8_t* data, size_t length) {
+    bool hasNonSpaceChar = false;  // 标记是否包含非空格字符
+
+    for (size_t i = 0; i < length; ++i) {
+        if (data[i] == '\0') {
+            return hasNonSpaceChar;  // 如果遇到终止符，且包含非空格字符，则认为是有效字符串
+        }
+        if (data[i] < 0x20 || data[i] > 0x7E) {
+            return false;  // 如果包含非 ASCII 可打印字符，视为无效字符串
+        }
+        if (data[i] != ' ') {
+            hasNonSpaceChar = true;  // 检测到非空格字符
+        }
+    }
+    return hasNonSpaceChar;  // 字符串没有终止符时，检查是否包含非空格字符
+}
+
 
 // 显示指令执行后的寄存器状态
 QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
@@ -86,6 +104,7 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
     std::stringstream output;
     std::stringstream regOutput;
 
+    // 开关：选择输出 hexdump 或者字符串
 
     // 遍历操作数并记录写入的寄存器状态
     for (int i = 0; i < instAnalysis->numOperands; ++i) {
@@ -99,10 +118,17 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
                 output << op.regName << "=0x" << std::hex << regValue << " ";
                 output.flush();
 
-                // 对可能为地址的寄存器值进行 hexdump，仅在值为有效地址时执行
+                // 对可能为地址的寄存器值进行 hexdump 或字符串输出，仅在值为有效地址时执行
                 if (isValidAddress(regValue)) {
-                    regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
-                    hexdump_memory(regOutput, reinterpret_cast<const uint8_t*>(regValue), 32, regValue);  // 默认显示16字节内容
+                    const uint8_t* dataPtr = reinterpret_cast<const uint8_t*>(regValue);
+                    size_t maxLen = 256;  // 最大显示字节数
+                    if (isAsciiPrintableString(dataPtr, maxLen)) {
+                        regOutput << "Strings :"<< std::string(reinterpret_cast<const char*>(dataPtr)) << "\n";
+                    } else {
+                        regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
+                        hexdump_memory(regOutput, reinterpret_cast<const uint8_t*>(regValue), 32, regValue);  // 显示32字节内容
+                    }
+
                 }
             }
         }
@@ -112,13 +138,13 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
     if (!output.str().empty()) {
         thiz->logbuf << "\tw[" << output.str() << "]" << std::endl;
         thiz->logbuf << regOutput.str();
-
     } else {
         thiz->logbuf << std::endl;
         thiz->logbuf << regOutput.str();
     }
     return QBDI::VMAction::CONTINUE;
 }
+
 
 // 显示指令执行前的寄存器状态
 QBDI::VMAction showPreInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {

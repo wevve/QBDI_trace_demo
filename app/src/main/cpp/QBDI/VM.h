@@ -156,12 +156,12 @@ public:
    */
   QBDI_EXPORT void addInstrumentedRange(rword start, rword end);
 
-  /*! Add the executable address ranges of a module to the set of instrumented
-   * address ranges.
+  /*!将模块的可执行地址范围添加到已检测的集合中
+   * 地址范围。
    *
-   * @param[in] name  The module's name.
+   * @param[in] name 模块的名称。
    *
-   * @return  True if at least one range was added to the instrumented ranges.
+   * @return 如果至少一个范围被添加到检测范围中，则为 True。
    */
   QBDI_EXPORT bool addInstrumentedModule(const std::string &name);
 
