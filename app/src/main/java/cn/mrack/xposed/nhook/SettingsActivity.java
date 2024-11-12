@@ -27,6 +27,10 @@ public class SettingsActivity extends Activity {
             String sajdlaskkjdlaks = NHook.sign1("sajdlaskkjdlaks");
             Log.d("MainHook", "onCreate: " + sajdlaskkjdlaks);
 
+            Runtime rt=Runtime.getRuntime();
+            long maxMemory=rt.maxMemory();
+            Log.d("MainHook","当前最大内存空间 "+Long.toString(maxMemory/(1024*1024)));
+
 
         }
     }
