@@ -75,11 +75,21 @@ std::string getSymbolFromCache(uint64_t address) {
     return "";
 }
 
+//会导致崩溃 待修复
 // 判断内存内容是否为有效的 ASCII 可打印字符串，且不为全空格
 bool isAsciiPrintableString(const uint8_t* data, size_t length) {
-    bool hasNonSpaceChar = false;  // 标记是否包含非空格字符
+    if (data == nullptr) {
+        return false;  // 防止空指针访问
+    }
+
+    bool hasNonSpaceChar = false;
 
     for (size_t i = 0; i < length; ++i) {
+        // 检查是否越界
+        if (!isValidAddress(reinterpret_cast<uint64_t>(&data[i]))) {
+            return false;  // 地址无效，返回 false
+        }
+
         if (data[i] == '\0') {
             return hasNonSpaceChar;  // 如果遇到终止符，且包含非空格字符，则认为是有效字符串
         }
@@ -90,8 +100,9 @@ bool isAsciiPrintableString(const uint8_t* data, size_t length) {
             hasNonSpaceChar = true;  // 检测到非空格字符
         }
     }
-    return hasNonSpaceChar;  // 字符串没有终止符时，检查是否包含非空格字符
+    return hasNonSpaceChar;
 }
+
 
 
 // 显示指令执行后的寄存器状态
@@ -123,10 +134,10 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
                     const uint8_t* dataPtr = reinterpret_cast<const uint8_t*>(regValue);
                     size_t maxLen = 256;  // 最大显示字节数
                     if (isAsciiPrintableString(dataPtr, maxLen)) {
-                        regOutput << "Strings :"<< std::string(reinterpret_cast<const char*>(dataPtr)) << "\n";
-                    } else {
-                        regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
-                        hexdump_memory(regOutput, reinterpret_cast<const uint8_t*>(regValue), 32, regValue);  // 显示32字节内容
+//                        regOutput << "Strings :"<< std::string(reinterpret_cast<const char*>(dataPtr)) << "\n";
+//                    } else {
+//                        regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
+//                        hexdump_memory(regOutput, reinterpret_cast<const uint8_t*>(regValue), 32, regValue);  // 显示32字节内容
                     }
 
                 }

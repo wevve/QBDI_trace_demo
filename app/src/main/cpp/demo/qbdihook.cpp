@@ -10,8 +10,11 @@
 #include <fstream>
 #include <asm-generic/mman-common.h>
 #include <sys/mman.h>
+#include <__fwd/string.h>
 #include "vm.h"
 #include "utils.h"
+#include "md5.h"
+#include "sha1.hpp"
 
 uint64_t get_tick_count64() {
     struct timespec ts;
@@ -86,18 +89,19 @@ void vm_handle_add(void *address, DobbyRegisterContext *ctx) {
      * 方法 4：确认是否存在系统限制
      */
     //内存不足：堆栈大小为 8MB，设备可能没有足够的连续内存来满足分配请求。
-    if (QBDI::allocateVirtualStack(state, 0x400000, &fakestack)) {
+    long mem_size = 0x100000 * 8 * 1 ;
+    if (QBDI::allocateVirtualStack(state, mem_size, &fakestack)) {
         LOGT("Failed to allocate virtual stack");
     }
 
     // Set memory protection to PROT_READ | PROT_WRITE
-    if (mprotect(fakestack, 0x800000, PROT_READ | PROT_WRITE) != 0) {
+    if (mprotect(fakestack, mem_size, PROT_READ | PROT_WRITE) != 0) {
         perror("mprotect failed");
         QBDI::alignedFree(fakestack);
     }
 
-    LOGT("Virtual stack allocated at %p with size 0x%lx and permissions PROT_READ | PROT_WRITE", fakestack, 0x800000);
-
+    double mem_size_mb = mem_size / (1024.0 * 1024.0);
+    LOGT("Virtual stack allocated at %p with size %.2f MB and permissions PROT_READ | PROT_WRITE", fakestack, mem_size_mb);
     // 调用虚拟机执行目标函数，传入目标函数地址
     qvm.call(nullptr, (uint64_t) address);
     // 释放之前分配的虚拟堆栈内存
@@ -176,6 +180,14 @@ void rc4(unsigned char *key, int key_len, char *buff, int len) {
     }
 }
 
+void sha1(){
+    const std::string input = "abc";
+
+    SHA1 checksum;
+    checksum.update(input);
+    const std::string hash = checksum.final();
+    LOGE("The SHA-1 of %s input %s",input.c_str(),hash.c_str());
+}
 
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -184,6 +196,22 @@ Java_cn_mrack_xposed_nhook_NHook_sign1(JNIEnv *env, jclass thiz, jstring sign) {
 
     const char *sign_ = env->GetStringUTFChars(sign, 0);
     const char *tuzi = "tuzi";
+
+
+    sha1();
+    MD5_CTX mdContext;
+    MD5Init(&mdContext);
+    MD5Update(&mdContext, (unsigned char *) "kanxue", strlen("kanxue"));
+    MD5Update(&mdContext, (unsigned char *) "imyang", strlen("imyang"));
+    MD5Update(&mdContext, (unsigned char *) "ollvm_md5", strlen("ollvm_md5"));
+    MD5Update(&mdContext, (unsigned char *) "bulNalvWmXgeYrQbvQiiFeLoD", strlen("bulNalvWmXgeYrQbvQiiFeLoD"));
+    unsigned char digest[16] = {0};
+    MD5Final(digest, &mdContext);
+
+    for (int i = 0; i < 16; ++i) {
+        printf("%02x", digest[i]);
+    }
+
 
     LOGE("sign_ : %s : %s",sign_,tuzi);
 
@@ -203,6 +231,6 @@ Java_cn_mrack_xposed_nhook_NHook_sign1(JNIEnv *env, jclass thiz, jstring sign) {
     LOGE("hex : %s",hex);
 
     env->ReleaseStringUTFChars(sign, sign_);
-    return env->NewStringUTF(hex);
+    return env->NewStringUTF("hex");
 }
 

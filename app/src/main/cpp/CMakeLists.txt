@@ -44,6 +44,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
         demo/ytbssl.cpp
         demo/modmenu_native.cpp
         demo/il2cpp_dumper.cpp
+        demo/md5.cpp
+        demo/sha1.hpp
 )
 
 

@@ -11,9 +11,10 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include "demo/il2cpp_dumper.h"
+#include "demo/md5.h"
 
 
-
+void md5();
 
 extern "C"
 {
@@ -26,10 +27,12 @@ Java_cn_mrack_xposed_nhook_NHook_initNativeHook(JNIEnv *env, jclass thiz, jobjec
     test_QBDI();
     LOGD("test_youtube");
 
+
 //    test_youtube();
 //    LOGD("dump_il2cpp");
 //   dumpIL2cpp(get_data_path(gContext));
 }
+
 
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -38,7 +41,16 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
+
+    jclass NHook = env->FindClass("cn/mrack/xposed/nhook/NHook");
+
+
     gVm = vm;
     return JNI_VERSION_1_6;
 }
+
 }
+
+
+
+
