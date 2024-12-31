@@ -17,26 +17,6 @@
 #include <unistd.h>    // for sysconf
 
 
-
-// 判断地址是否在有效内存页上
-bool isValidAddress(uint64_t address) {
-    // 获取系统页大小
-    long pageSize = sysconf(_SC_PAGESIZE);
-    if (pageSize <= 0) {
-        return false;
-    }
-
-    // 对齐地址到页大小
-    void* alignedAddress = reinterpret_cast<void*>(address & ~(pageSize - 1));
-    unsigned char vec;
-
-    // 使用 mincore 检查该地址是否为有效内存页
-    if (mincore(alignedAddress, 1, &vec) == 0) {
-        return true;  // 地址有效
-    }
-    return false;  // 地址无效
-}
-
 // 将内存块按 hexdump 格式输出到日志缓冲区
 void hexdump_memory(std::stringstream &logbuf, const uint8_t* data, size_t size, uint64_t address) {
     size_t offset = 0;

@@ -89,7 +89,7 @@ void vm_handle_add(void *address, DobbyRegisterContext *ctx) {
      * 方法 4：确认是否存在系统限制
      */
     //内存不足：堆栈大小为 8MB，设备可能没有足够的连续内存来满足分配请求。
-    long mem_size = 0x100000 * 8 * 1 ;
+    long mem_size = 0x100000 * 1 * 1 ;
     if (QBDI::allocateVirtualStack(state, mem_size, &fakestack)) {
         LOGT("Failed to allocate virtual stack");
     }
@@ -208,9 +208,21 @@ Java_cn_mrack_xposed_nhook_NHook_sign1(JNIEnv *env, jclass thiz, jstring sign) {
     unsigned char digest[16] = {0};
     MD5Final(digest, &mdContext);
 
-    for (int i = 0; i < 16; ++i) {
-        printf("%02x", digest[i]);
+    // 创建一个字符串流用于构建十六进制字符串
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+
+    // 将每个字节转换为两位十六进制数
+    for(int i = 0; i < 16; ++i) {
+        ss << std::setw(2) << static_cast<int>(digest[i]);
     }
+
+    // 获取最终的十六进制字符串
+    std::string md5String = ss.str();
+
+    // 打印 MD5 摘要
+    LOGE("MD5: %s", md5String.c_str());
+
 
 
     LOGE("sign_ : %s : %s",sign_,tuzi);

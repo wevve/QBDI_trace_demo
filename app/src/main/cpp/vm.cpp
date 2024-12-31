@@ -1,7 +1,15 @@
 #include "vm.h"
 #include "assert.h"
 #include "hexdump.h"
+#include "utils.h"
+
 #include <unordered_map>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <cstring>
+#include <sstream>
+#include <string>
 
 using namespace std;
 using namespace QBDI;
@@ -75,21 +83,39 @@ std::string getSymbolFromCache(uint64_t address) {
     return "";
 }
 
-//会导致崩溃 待修复
+// 判断地址是否在有效内存页上
+bool isValidAddress(uint64_t address) {
+    if (address == 0x7603511e){
+//        LOGE("address : %p",address);
+//        return false;
+    }
+    // 获取系统页大小
+    long pageSize = sysconf(_SC_PAGESIZE);
+    if (pageSize <= 0) {
+        return false;
+    }
+
+    // 对齐地址到页大小
+    void* alignedAddress = reinterpret_cast<void*>(address & ~(pageSize - 1));
+    unsigned char vec;
+
+    // 使用 mincore 检查该地址是否为有效内存页
+    if (mincore(alignedAddress, pageSize, &vec) == 0) {
+        return true;  // 地址有效
+    }
+    return false;  // 地址无效
+}
+
+
 // 判断内存内容是否为有效的 ASCII 可打印字符串，且不为全空格
 bool isAsciiPrintableString(const uint8_t* data, size_t length) {
     if (data == nullptr) {
-        return false;  // 防止空指针访问
+        LOGD("Error: data is NULL");
+        return false;  // 数据为空，返回无效字符串
     }
 
-    bool hasNonSpaceChar = false;
-
+    bool hasNonSpaceChar = false;  // 标记是否包含非空格字符
     for (size_t i = 0; i < length; ++i) {
-        // 检查是否越界
-        if (!isValidAddress(reinterpret_cast<uint64_t>(&data[i]))) {
-            return false;  // 地址无效，返回 false
-        }
-
         if (data[i] == '\0') {
             return hasNonSpaceChar;  // 如果遇到终止符，且包含非空格字符，则认为是有效字符串
         }
@@ -100,12 +126,32 @@ bool isAsciiPrintableString(const uint8_t* data, size_t length) {
             hasNonSpaceChar = true;  // 检测到非空格字符
         }
     }
-    return hasNonSpaceChar;
+    return hasNonSpaceChar;  // 字符串没有终止符时，检查是否包含非空格字符
+}
+
+// 使用 process_vm_readv 安全读取内存的函数
+bool safeReadMemory(uint64_t address, uint8_t* buffer, size_t length) {
+    struct iovec local_iov;
+    struct iovec remote_iov;
+
+    local_iov.iov_base = buffer;
+    local_iov.iov_len = length;
+
+    remote_iov.iov_base = reinterpret_cast<void*>(address);
+    remote_iov.iov_len = length;
+
+    ssize_t nread = process_vm_readv(getpid(), &local_iov, 1, &remote_iov, 1, 0);
+    if (nread == static_cast<ssize_t>(length)) {
+        return true;  // 成功读取
+    } else {
+        // 可以记录错误信息，便于调试
+//        LOGE("process_vm_readv failed at address 0x%lx: %s", address, strerror(errno));
+        return false;  // 读取失败
+    }
 }
 
 
-
-// 显示指令执行后的寄存器状态
+// 显示指令执行后的寄存器状态 打印字符串 hexdump
 QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI::FPRState *fprState, void *data) {
     auto thiz = (class vm *) data;
 
@@ -114,8 +160,6 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
 
     std::stringstream output;
     std::stringstream regOutput;
-
-    // 开关：选择输出 hexdump 或者字符串
 
     // 遍历操作数并记录写入的寄存器状态
     for (int i = 0; i < instAnalysis->numOperands; ++i) {
@@ -133,13 +177,17 @@ QBDI::VMAction showPostInstruction(QBDI::VM *vm, QBDI::GPRState *gprState, QBDI:
                 if (isValidAddress(regValue)) {
                     const uint8_t* dataPtr = reinterpret_cast<const uint8_t*>(regValue);
                     size_t maxLen = 256;  // 最大显示字节数
-                    if (isAsciiPrintableString(dataPtr, maxLen)) {
-//                        regOutput << "Strings :"<< std::string(reinterpret_cast<const char*>(dataPtr)) << "\n";
-//                    } else {
-//                        regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
-//                        hexdump_memory(regOutput, reinterpret_cast<const uint8_t*>(regValue), 32, regValue);  // 显示32字节内容
+                    uint8_t buffer[256];
+                    if (safeReadMemory(regValue, buffer, maxLen)) {
+                        if (isAsciiPrintableString(buffer, maxLen)) {
+                            regOutput << "Strings :" << std::string(reinterpret_cast<const char*>(buffer)) << "\n";
+                        } else {
+                            regOutput << "Hexdump for " << op.regName << " at address 0x" << std::hex << regValue << ":\n";
+                            hexdump_memory(regOutput, buffer, 32, regValue);  // 显示32字节内容
+                        }
+                    } else {
+                        regOutput << "Invalid memory access at address 0x" << std::hex << regValue << "\n";
                     }
-
                 }
             }
         }
